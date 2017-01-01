@@ -29,7 +29,7 @@ make = $(ARCHIVE) | \
 _all: _container
 	@$(call make,)
 	status=$$?
-	docker cp $(BUILD):/build/ $(RESULT_DIR)
+	docker cp $(BUILD):/build/. $(RESULT_DIR)
 	docker rm -f -v $(BUILD) > /dev/null
 	exit $$status
 
@@ -43,7 +43,7 @@ TARGETS = $(shell $(CMD))
 $(TARGETS): _container
 	@$(call make,$@)
 	status=$$?
-	docker cp $(BUILD):/build/ $(RESULT_DIR)
+	docker cp $(BUILD):/build/. $(RESULT_DIR)
 	docker rm -f -v $(BUILD) > /dev/null
 	exit $$status
 
