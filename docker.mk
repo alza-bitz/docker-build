@@ -9,9 +9,9 @@
 DOCKER_IMAGE = amazonlinux:2016.09
 BUILD_DIR = docker-build
 RESULT_DIR = docker-result
-IMAGE_NAME = $(notdir $(CURDIR))-docker-build
+IMAGE_NAME = $(if $(JOB_NAME),$(JOB_NAME)-docker-build,$(notdir $(CURDIR))-docker-build)
 
-#ARCHIVE="tar -c --exclude $(RESULT_DIR) ."
+#ARCHIVE="tar -c --exclude docker-result ."
 #ARCHIVE="git ls-files HEAD | tar -c -T -"
 ARCHIVE ?= git archive HEAD
 
