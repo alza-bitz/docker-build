@@ -50,7 +50,7 @@ $(TARGETS): _container
 
 _clean:
 	rm -rf $(RESULT_DIR)
-	docker images -q $(IMAGE_NAME) | xargs -r docker rmi
+	docker images --format='{{.Repository}}' $(IMAGE_NAME) | xargs -r docker rmi
 
 _image:
 ifneq ($(wildcard $(BUILD_DIR)),)
