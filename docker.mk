@@ -9,6 +9,7 @@
 DOCKER_IMAGE = amazonlinux:2016.09
 BUILD_DIR = docker-build
 RESULT_DIR = docker-result
+IMAGE_NAME = $(notdir $(CURDIR))-docker-build
 
 #ARCHIVE="tar -c --exclude $(RESULT_DIR) ."
 #ARCHIVE="git ls-files HEAD | tar -c -T -"
@@ -49,12 +50,12 @@ $(TARGETS): _container
 
 _clean:
 	rm -rf $(RESULT_DIR)
-	docker images -q $(notdir $(CURDIR))-docker-build | xargs -r docker rmi
+	docker images -q $(IMAGE_NAME) | xargs -r docker rmi
 
 _image:
 ifneq ($(wildcard $(BUILD_DIR)),)
 	$(info $(lastword $(MAKEFILE_LIST)): Building image...) \
-	$(eval IMAGE = $(shell docker build -q --rm -t $(notdir $(CURDIR))-docker-build $(BUILD_DIR))) \
+	$(eval IMAGE = $(shell docker build -q --rm -t $(IMAGE_NAME) $(BUILD_DIR))) \
 	$(if $(IMAGE),,$(error Could not build image))
 else
 	@printf '%s: Pulling image...\n' $(lastword $(MAKEFILE_LIST))
