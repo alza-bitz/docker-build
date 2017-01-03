@@ -35,7 +35,7 @@ _all: _container
 	exit $$status
 
 CMD = $(MAKE) -pRrq : 2>/dev/null | \
-  awk -v RS= -F: '/^\# File/,/^\# Finished Make data base/ {if ($$1 !~ "^[\#.]") {print $$1}}' | \
+  awk -v RS= -F: '/^\# File/,/^\# Finished Make data base/ {if ($$1 !~ "^[\#.]") {print $$1} else if ($$1 ~ "^\# makefile") {print $$2}}' | \
   grep -v -E -e '^[^[:alnum:]]' -e '^$@$$' | \
   xargs
 
