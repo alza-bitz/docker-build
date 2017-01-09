@@ -4,7 +4,7 @@
 # TODO assert required commands present
 
 # TODO default docker run args?
-#DOCKER_RUN_ARGS="-v $PWD/../gnu-make-imin-lib:/usr/local/include:ro,Z"
+#DOCKER_RUN_OPTS="-v $PWD/../gnu-make-imin-lib:/usr/local/include:ro,Z"
 # TODO default docker image?
 DOCKER_IMAGE = amazonlinux:2016.09
 BUILD_DIR = docker-build
@@ -21,9 +21,9 @@ make = $(ARCHIVE) | \
   -v ~/.aws/credentials:/root/.aws/credentials:ro,Z \
   --volumes-from=$(BUILD) \
   -w /build \
-  $(DOCKER_RUN_ARGS) \
+  $(DOCKER_RUN_OPTS) \
   $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) \
-  sh -c "tar -x --warning=all && make $(1)"
+  sh -c "tar -x --warning=all && make $(MAKE_OPTS) $(1)"
 
 .ONESHELL:
 
