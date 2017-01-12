@@ -18,6 +18,7 @@ ARCHIVE ?= git archive HEAD
 make = $(ARCHIVE) | \
   docker run -i --rm \
   -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_PROFILE \
+  -e ANSIBLE_FORCE_COLOR \
   -v ~/.aws/credentials:/root/.aws/credentials:ro,Z \
   --volumes-from=$(BUILD) \
   -w /build \
