@@ -1,15 +1,16 @@
 
 # host requirements: gnu make 3.82?, docker, awk, grep, xargs
-# TODO assert required make version
 # TODO assert required commands present
+# TODO assert required make version
+# TODO assert required docker version
 
-# TODO default docker run args?
-#DOCKER_RUN_OPTS="-v $PWD/../gnu-make-imin-lib:/usr/local/include:ro,Z"
 # TODO default docker image?
 DOCKER_IMAGE = amazonlinux:2016.09
 BUILD_DIR = docker-build
 RESULT_DIR = docker-result
 IMAGE_NAME = $(if $(JOB_NAME),$(JOB_NAME)-docker-build,$(notdir $(CURDIR))-docker-build)
+
+ENV_PASSTHROUGH = AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_PROFILE ANSIBLE_FORCE_COLOR
 
 #ARCHIVE="tar -c --exclude docker-result ."
 #ARCHIVE="git ls-files HEAD | tar -c -T -"
@@ -17,8 +18,7 @@ ARCHIVE ?= git archive HEAD
 
 make = $(ARCHIVE) | \
   docker run -i --rm \
-  -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_PROFILE \
-  -e ANSIBLE_FORCE_COLOR \
+  $(patsubst %,-e %,$(ENV_PASSTHROUGH)) \
   -v ~/.aws/credentials:/root/.aws/credentials:ro,Z \
   --volumes-from=$(BUILD) \
   -w /build \
