@@ -10,12 +10,21 @@ BUILD_DIR = docker-build
 RESULT_DIR = docker-result
 IMAGE_NAME = $(if $(JOB_NAME),$(JOB_NAME)-docker-build,$(notdir $(CURDIR))-docker-build)
 
+DOCKER_MAKEFLAGS = $(strip \
+  $(subst n,,$(filter-out --%,$(MAKEFLAGS))) \
+  $(filter-out --just-print --dry-run --recon,$(filter --%,$(MAKEFLAGS))))
+
 ENV_PASSTHROUGH = AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_PROFILE ANSIBLE_FORCE_COLOR
 
 #ARCHIVE="tar -c --exclude docker-result ."
 #ARCHIVE="git ls-files HEAD | tar -c -T -"
 ARCHIVE ?= git archive HEAD
 
+# 1. make flags
+make_opts = $(strip $(patsubst %,-%,$(filter-out --%,$(1))) $(filter --%,$(1)))
+
+# 1. make targets
+# 2. make flags
 make = $(ARCHIVE) | \
   docker run -i --rm \
   $(patsubst %,-e %,$(ENV_PASSTHROUGH)) \
@@ -24,30 +33,31 @@ make = $(ARCHIVE) | \
   -w /build \
   $(DOCKER_RUN_OPTS) \
   $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) \
-  sh -c "tar -x --warning=all && make $(MAKE_OPTS) $(1)"
+  sh -c "tar -x --warning=all && make $(call make_opts,$(2)) $(1)"
 
-.ONESHELL:
+# 1. make targets
+# 2. make flags
+make_docker = $(call make,$(1),$(2)); \
+  status=$$?; \
+  docker cp $(BUILD):/build/. $(RESULT_DIR); \
+  docker rm -f -v $(BUILD) > /dev/null; \
+  exit $$status
 
-_all: _container
-	@$(call make,)
-	status=$$?
-	docker cp $(BUILD):/build/. $(RESULT_DIR)
-	docker rm -f -v $(BUILD) > /dev/null
-	exit $$status
-
-CMD = $(MAKE) -pRrq : 2>/dev/null | \
+MAKE_LIST_TARGETS = $(MAKE) -pRrq : 2>/dev/null | \
   awk -v RS= -F: '/^\# File/,/^\# Finished Make data base/ {if ($$1 !~ "^[\#.]") {print $$1} else if ($$1 ~ "^\# makefile") {print $$2}}' | \
   grep -v -E -e '^[^[:alnum:]]' -e '^$@$$' | \
   xargs
 
-TARGETS = $(shell $(CMD))
+TARGETS = $(shell $(MAKE_LIST_TARGETS))
+
+_all: _container
+	@$(call make_docker,,$(DOCKER_MAKEFLAGS))
 
 $(TARGETS): _container
-	@$(call make,$@)
-	status=$$?
-	docker cp $(BUILD):/build/. $(RESULT_DIR)
-	docker rm -f -v $(BUILD) > /dev/null
-	exit $$status
+	@$(call make_docker,$@,$(DOCKER_MAKEFLAGS))
+
+$(addsuffix .dry-run,$(TARGETS)): _container
+	@$(call make_docker,$(basename $@),$(DOCKER_MAKEFLAGS) --dry-run)
 
 _clean:
 	rm -rf $(RESULT_DIR)
@@ -55,8 +65,8 @@ _clean:
 
 _image:
 ifneq ($(wildcard $(BUILD_DIR)),)
-	$(info $(lastword $(MAKEFILE_LIST)): Building image...) \
-	$(eval IMAGE = $(shell docker build -q --rm -t $(IMAGE_NAME) $(BUILD_DIR))) \
+	$(info $(lastword $(MAKEFILE_LIST)): Building image...)
+	$(eval IMAGE = $(shell docker build -q --rm -t $(IMAGE_NAME) $(BUILD_DIR)))
 	$(if $(IMAGE),,$(error Could not build image))
 else
 	@printf '%s: Pulling image...\n' $(lastword $(MAKEFILE_LIST))
@@ -64,8 +74,8 @@ else
 endif
 
 _container: _image
-	$(info $(lastword $(MAKEFILE_LIST)): Creating container...) \
-	$(eval BUILD = $(shell docker create -v /build $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) /bin/true)) \
+	$(info $(lastword $(MAKEFILE_LIST)): Creating container...)
+	$(eval BUILD = $(shell docker create -v /build $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) /bin/true))
 	$(if $(BUILD),,$(error Could not create container))
 
 .PHONY: _all _clean _image _container
