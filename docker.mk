@@ -1,5 +1,7 @@
 
-# host requirements: gnu make 3.82+, docker, git, gnu (find, tar, awk, grep)
+# Host requirements: gnu make 3.82+, docker, git, gnu awk, gnu grep, gnu xargs
+# Container requirements (minimum): gnu make, gnu tar
+
 # TODO assert required commands present
 # TODO assert required make version
 # TODO assert required docker version
