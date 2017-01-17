@@ -52,8 +52,7 @@ make_docker = $(call make,$(1),$(2)); \
 
 MAKE_LIST_TARGETS = $(MAKE) -pRrq : 2>/dev/null | \
   awk -v RS= -F: '/^\# File/,/^\# Finished Make data base/ {if ($$1 !~ "^[\#.]") {print $$1} else if ($$1 ~ "^\# makefile") {print $$2}}' | \
-  grep -v -E -e '^[^[:alnum:]]' -e '^$@$$' | \
-  xargs
+  grep -v -E -e '^[^[:alnum:]]' -e '^$@$$'
 
 TARGETS = $(shell $(MAKE_LIST_TARGETS))
 
