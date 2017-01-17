@@ -1,5 +1,5 @@
 
-# host requirements: gnu make 3.82?, docker, awk, grep, xargs
+# host requirements: gnu make 3.82+, docker, git, gnu (find, tar, awk, grep)
 # TODO assert required commands present
 # TODO assert required make version
 # TODO assert required docker version
@@ -14,11 +14,14 @@ DOCKER_MAKEFLAGS = $(strip \
   $(subst n,,$(filter-out --%,$(MAKEFLAGS))) \
   $(filter-out --just-print --dry-run --recon,$(filter --%,$(MAKEFLAGS))))
 
+export GIT_COMMIT ?= $(shell git rev-parse HEAD)
+export GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+
+GIT_PASSTHROUGH = GIT_COMMIT GIT_BRANCH
 AWS_PASSTHROUGH = AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_PROFILE
 ANSIBLE_PASSTHROUGH = ANSIBLE_FORCE_COLOR ANSIBLE_VAULT_PASSWORD_FILE
-JENKINS_PASSTHROUGH = GIT_COMMIT GIT_BRANCH
 
-ENV_PASSTHROUGH = $(AWS_PASSTHROUGH) $(ANSIBLE_PASSTHROUGH) $(JENKINS_PASSTHROUGH)
+ENV_PASSTHROUGH = $(GIT_PASSTHROUGH) $(AWS_PASSTHROUGH) $(ANSIBLE_PASSTHROUGH)
 
 #ARCHIVE="tar -c --exclude docker-result ."
 #ARCHIVE="git ls-files HEAD | tar -c -T -"
