@@ -6,11 +6,9 @@
 # TODO assert required make version
 # TODO assert required docker version
 
-# TODO default docker image?
-DOCKER_IMAGE = amazonlinux:2016.09
 BUILD_DIR = docker-build
 RESULT_DIR = docker-result
-IMAGE_NAME = $(if $(JOB_NAME),$(JOB_NAME)-docker-build,$(notdir $(CURDIR))-docker-build)
+BUILD_IMAGE = $(if $(JOB_NAME),$(JOB_NAME)-docker-build,$(notdir $(CURDIR))-docker-build)
 
 DOCKER_MAKEFLAGS = $(strip \
   $(subst n,,$(filter-out --%,$(MAKEFLAGS))) \
@@ -41,7 +39,7 @@ make = $(ARCHIVE) | \
   --volumes-from=$(BUILD) \
   -w /build \
   $(DOCKER_RUN_OPTS) \
-  $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) \
+  $(if $(DOCKER_IMAGE),$(DOCKER_IMAGE),$(BUILD_IMAGE)) \
   sh -c "tar -x --warning=all && make $(call make_opts,$(2)) $(1)"
 
 # 1. make targets
@@ -69,21 +67,23 @@ $(addsuffix .dry-run,$(TARGETS)): _container
 
 _clean:
 	rm -rf $(RESULT_DIR)
-	docker images --format='{{.Repository}}' $(IMAGE_NAME) | xargs -r docker rmi
+	rm -rf docker-build.log
+	docker images --format='{{.Repository}}' $(BUILD_IMAGE) | xargs -r docker rmi
 
 _image:
-ifneq ($(wildcard $(BUILD_DIR)),)
-	$(info $(lastword $(MAKEFILE_LIST)): Building image...)
-	$(eval IMAGE = $(shell docker build -q --rm -t $(IMAGE_NAME) $(BUILD_DIR)))
-	$(if $(IMAGE),,$(error Could not build image))
-else
+ifneq ($(DOCKER_IMAGE),)
 	@printf '%s: Pulling image...\n' $(lastword $(MAKEFILE_LIST))
-	docker pull $(DOCKER_IMAGE) > /dev/null
+	@docker pull $(DOCKER_IMAGE) > docker-build.log
+else ifneq ($(wildcard $(BUILD_DIR)),)
+	@printf '%s: Building image...\n' $(lastword $(MAKEFILE_LIST))
+	@docker build --rm -t $(BUILD_IMAGE) $(BUILD_DIR) > docker-build.log
+else
+	$(error Could not prepare image; docker-build dir not found, or DOCKER_IMAGE not given)
 endif
 
 _container: _image
 	$(info $(lastword $(MAKEFILE_LIST)): Creating container...)
-	$(eval BUILD = $(shell docker create -v /build $(if $(IMAGE),$(IMAGE),$(DOCKER_IMAGE)) /bin/true))
+	$(eval BUILD = $(shell docker create -v /build $(if $(DOCKER_IMAGE),$(DOCKER_IMAGE),$(BUILD_IMAGE)) /bin/true))
 	$(if $(BUILD),,$(error Could not create container))
 
 .PHONY: _all _clean _image _container
