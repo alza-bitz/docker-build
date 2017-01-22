@@ -30,6 +30,25 @@ ARCHIVE ?= git archive HEAD
 # 1. make flags
 make_opts = $(strip $(patsubst %,-%,$(filter-out --%,$(1))) $(filter --%,$(1)))
 
+STDERR_TTY = $(shell test -t 2 && printf tty)
+
+# http://unix.stackexchange.com/a/102206
+# http://serverfault.com/a/63708
+# 1. cmd
+define stderr_red
+{ \
+  { \
+    { \
+      { \
+        $(1) 3>&1 1>&4 2>&3; printf $$? 1>&5; \
+      } | { \
+        while read; do printf "%b%s%b\n" "\e[31m" "$$REPLY" "\e[0m"; done; \
+      } 1>&2; \
+    } 5>&1; \
+  } | (read; exit $$REPLY) \
+} 4>&1
+endef
+
 # 1. make targets
 # 2. make flags
 make = $(ARCHIVE) | \
@@ -40,7 +59,9 @@ make = $(ARCHIVE) | \
   -w /build \
   $(DOCKER_RUN_OPTS) \
   $(if $(DOCKER_IMAGE),$(DOCKER_IMAGE),$(BUILD_IMAGE)) \
-  sh -c "tar -x --warning=all && make $(call make_opts,$(2)) $(1)"
+  sh -c 'tar -x --warning=all && $(if $(STDERR_TTY),\
+    $(call stderr_red,make $(call make_opts,$(2)) $(1)),\
+    make $(call make_opts,$(2)) $(1))'
 
 # 1. make targets
 # 2. make flags
