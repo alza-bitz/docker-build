@@ -1,5 +1,5 @@
 
-# Host requirements: gnu make 3.82+, docker, git, gnu awk, gnu grep, gnu xargs
+# Host requirements: gnu make 3.82+, docker, git, gnu awk, gnu grep
 # Container requirements (minimum): gnu make, gnu tar
 
 # TODO assert required commands present
@@ -89,7 +89,7 @@ $(addsuffix .dry-run,$(TARGETS)): _container
 _clean:
 	rm -rf $(RESULT_DIR)
 	rm -rf docker-build.log
-	docker images --format='{{.Repository}}' $(BUILD_IMAGE) | xargs -r docker rmi
+	if docker inspect $(BUILD_IMAGE) >/dev/null 2>&1; then docker rmi $(BUILD_IMAGE); fi
 
 _image:
 ifneq ($(DOCKER_IMAGE),)
