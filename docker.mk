@@ -1,6 +1,6 @@
 
-# Host requirements: gnu make 3.82+, docker, git, gnu awk, gnu grep
-# Container requirements: gnu make, gnu tar, (tini)
+# Host dependencies: gnu make 3.82+, docker, git, gnu awk, gnu grep
+# Container dependencies: gnu make, gnu tar, (tini)
 
 # TODO assert required commands present
 # TODO assert required make version
@@ -14,8 +14,8 @@ DOCKER_MAKEFLAGS = $(strip \
   $(subst n,,$(filter-out --%,$(MAKEFLAGS))) \
   $(filter-out --just-print --dry-run --recon,$(filter --%,$(MAKEFLAGS))))
 
-export GIT_COMMIT ?= $(shell git rev-parse HEAD)
-export GIT_BRANCH ?= $(shell git rev-parse --abbrev-ref HEAD)
+export GIT_COMMIT := $(shell git rev-parse HEAD)
+export GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
 GIT_PASSTHROUGH = GIT_COMMIT GIT_BRANCH
 AWS_PASSTHROUGH = AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_DEFAULT_PROFILE
